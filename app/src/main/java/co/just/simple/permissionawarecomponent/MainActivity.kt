@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
                             Toast.makeText(this,"choose uri: $chooseUri",Toast.LENGTH_SHORT).show()
                         }
                     }
-                val clickEvent = remember { mutableStateOf<Int?>(null) }
+                var clickEvent by remember { mutableStateOf<Int?>(null) }
                 var showMultiDialog by remember { mutableStateOf(false) }
                 if(showMultiDialog) {
                     MultiActionDialog(
@@ -85,7 +85,7 @@ class MainActivity : ComponentActivity() {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     PermissionAwareComponent(
                         permissions = PERMISSIONS,
-                        clickEvent = clickEvent.value,
+                        clickEvent = clickEvent,
                         onPermissionGranted = {
                             Log.d("Permission", "Call back Permission granted")
                             pickPhotoOrVideo.launch(PickVisualMediaRequest(mediaType = ActivityResultContracts.PickVisualMedia.ImageAndVideo))
@@ -97,7 +97,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         Button(onClick = {
                             if(context.checkPermissionsDenied(PERMISSIONS)) {
-                                clickEvent.value = Random.nextInt(1, 100)
+                                clickEvent = Random.nextInt(1, 100)
                             } else {
                                 Log.d("Permission", "Permission granted")
                                 pickPhotoOrVideo.launch(PickVisualMediaRequest(mediaType = ActivityResultContracts.PickVisualMedia.ImageAndVideo))
