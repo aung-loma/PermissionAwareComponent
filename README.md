@@ -12,7 +12,7 @@
 ```
 <br><br>
 
-## 2) Let go to create PermissionAwareComponent
+## 2) Let go to use PermissionAwareComponent
 
 ```kotlin
 @Composable
