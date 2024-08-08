@@ -29,7 +29,6 @@ import co.just.simple.permissionawarecomponent.component.PermissionAwareComponen
 import co.just.simple.permissionawarecomponent.component.checkPermissionsDenied
 import co.just.simple.permissionawarecomponent.component.openAppSetting
 import co.just.simple.permissionawarecomponent.ui.theme.PermissionAwareComponentTheme
-import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
     val PERMISSIONS = when {
@@ -68,7 +67,6 @@ class MainActivity : ComponentActivity() {
                             Toast.makeText(this,"choose uri: $chooseUri",Toast.LENGTH_SHORT).show()
                         }
                     }
-                var clickEvent by remember { mutableStateOf<Int?>(null) }
                 var showMultiDialog by remember { mutableStateOf(false) }
                 if(showMultiDialog) {
                     MultiActionDialog(
@@ -85,7 +83,6 @@ class MainActivity : ComponentActivity() {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     PermissionAwareComponent(
                         permissions = PERMISSIONS,
-                        clickEvent = clickEvent,
                         onPermissionGranted = {
                             Log.d("Permission", "Call back Permission granted")
                             pickPhotoOrVideo.launch(PickVisualMediaRequest(mediaType = ActivityResultContracts.PickVisualMedia.ImageAndVideo))
@@ -93,19 +90,20 @@ class MainActivity : ComponentActivity() {
                         shouldShowSetting = {
                             Log.d("Permission", "Call back Permission denied")
                             showMultiDialog = true
-                        }
-                    ) {
-                        Button(onClick = {
-                            if(context.checkPermissionsDenied(PERMISSIONS)) {
-                                clickEvent = Random.nextInt(1, 100)
-                            } else {
-                                Log.d("Permission", "Permission granted")
-                                pickPhotoOrVideo.launch(PickVisualMediaRequest(mediaType = ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+                        },
+                        content = { event ->
+                            Button(onClick = {
+                                if(context.checkPermissionsDenied(PERMISSIONS)) {
+                                    event.value = true
+                                } else {
+                                    Log.d("Permission", "Permission granted")
+                                    pickPhotoOrVideo.launch(PickVisualMediaRequest(mediaType = ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+                                }
+                            }) {
+                                Text(text = "Click me")
                             }
-                        }) {
-                            Text(text = "Click me")
                         }
-                    }
+                    )
                 }
             }
         }

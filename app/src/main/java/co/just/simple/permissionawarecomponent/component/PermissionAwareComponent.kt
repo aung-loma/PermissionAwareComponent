@@ -5,11 +5,11 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
-import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,11 +25,11 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 fun PermissionAwareComponent(
     modifier: Modifier = Modifier,
     permissions: List<String>,
-    clickEvent: Int?,
     onPermissionGranted: () -> Unit,
     shouldShowSetting: () -> Unit,
-    content: @Composable() (BoxScope.() -> Unit),
+    content: @Composable() (BoxScope.(event: MutableState<Boolean>) -> Unit),
 ) {
+    val event = rememberSaveable {  mutableStateOf(false)  }
     var requestedTime by rememberSaveable { mutableStateOf(0L) }
     var onResultedTime by rememberSaveable { mutableStateOf(0L) }
     val deniedPermissions = rememberSaveable { mutableStateOf(listOf<String>()) }
@@ -47,31 +47,14 @@ fun PermissionAwareComponent(
             val diff = onResultedTime - requestedTime
             if(diff < 1500) {
                 shouldShowRationale.value = true
+                event.value = true
                 requestedTime = 0L
                 onResultedTime = 0L
             }
         }
     )
-    LaunchedEffect(shouldShowRationale.value) {
-        if(shouldShowRationale.value) {
-            if(deniedPermissions.value.isNotEmpty()) {
-                if (!multiplePermissionState.allPermissionsGranted){
-                    if (multiplePermissionState.shouldShowRationale) {
-                        multiplePermissionState.launchMultiplePermissionRequest()
-                    } else {
-                        // show setting dialog
-                        shouldShowSetting()
-                    }
-                } else {
-                    onPermissionGranted()
-                    deniedPermissions.value = emptyList()
-                }
-            }
-            shouldShowRationale.value = false
-        }
-    }
-    LaunchedEffect(key1 = clickEvent) {
-        clickEvent?.let {
+    LaunchedEffect(key1 = event.value) {
+        if(event.value) {
             if(deniedPermissions.value.isNotEmpty()) {
                 if (!multiplePermissionState.allPermissionsGranted){
                     if (multiplePermissionState.shouldShowRationale) {
@@ -90,10 +73,11 @@ fun PermissionAwareComponent(
                     multiplePermissionState.launchMultiplePermissionRequest()
                 }
             }
+            event.value = false
         }
     }
     Box(modifier = modifier, content = {
-        content()
+        content(event)
     })
 }
 
