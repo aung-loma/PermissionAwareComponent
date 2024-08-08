@@ -12,7 +12,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -33,7 +32,6 @@ fun PermissionAwareComponent(
     var requestedTime by rememberSaveable { mutableStateOf(0L) }
     var onResultedTime by rememberSaveable { mutableStateOf(0L) }
     val deniedPermissions = rememberSaveable { mutableStateOf(listOf<String>()) }
-    val shouldShowRationale = remember { mutableStateOf(false) }
     val multiplePermissionState = rememberMultiplePermissionsState(
         permissions = permissions,
         onPermissionsResult = { result ->
@@ -43,13 +41,16 @@ fun PermissionAwareComponent(
                 if (!entry.value) list.add(entry.key)
             }
             deniedPermissions.value = list
-            onResultedTime = System.currentTimeMillis()
-            val diff = onResultedTime - requestedTime
-            if(diff < 1500) {
-                shouldShowRationale.value = true
-                event.value = true
-                requestedTime = 0L
-                onResultedTime = 0L
+            if(deniedPermissions.value.isNotEmpty()) {
+                onResultedTime = System.currentTimeMillis()
+                val diff = onResultedTime - requestedTime
+                if(diff < 500) {
+                    event.value = true
+                    requestedTime = 0L
+                    onResultedTime = 0L
+                }
+            } else {
+                onPermissionGranted()
             }
         }
     )
@@ -57,6 +58,7 @@ fun PermissionAwareComponent(
         if(event.value) {
             if(deniedPermissions.value.isNotEmpty()) {
                 if (!multiplePermissionState.allPermissionsGranted){
+                    requestedTime = System.currentTimeMillis()
                     if (multiplePermissionState.shouldShowRationale) {
                         multiplePermissionState.launchMultiplePermissionRequest()
                     } else {
